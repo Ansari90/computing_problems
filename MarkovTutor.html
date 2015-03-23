@@ -1,0 +1,180 @@
+<html>
+    <head>
+        <title>Markov's Typing Tutor</title>
+        
+        <style>
+            body {
+                background: Beige;
+            }
+            
+            .outputSpan {
+                position: absolute;
+                padding-left: 5px;
+                padding-right: 5px;
+                
+                border-color: Black;
+                border-width: medium;
+                border-style: double;
+            }
+            
+            #infoSpan {
+                text-align: center;
+                right: 5%;
+                width: 10%;
+            }
+            
+            #phraseSpan {
+                font-size: 35px;
+                
+                top: 30%;
+                left: 25%;
+                width: 50%;      
+            }
+            
+            #inputDiv {
+                position: relative;
+                top: 300px;
+            }
+            
+            .inputSpan {
+                position: absolute;
+                
+                left: 50%;
+                margin-right: -50%;
+                transform: translate(-50%, 0);
+            }
+            
+            #resultSpan {                
+                font-size: 45px;
+            }
+            
+            #typeSpan {
+                top: 75px;
+            }
+            
+            #typeBox {
+                width: 300px;
+            }
+            
+            .wrongText {
+                color: Red;
+            }
+        </style>
+        
+        <script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
+        <script>
+            /*
+             *          ***Markov's Typing Tutor***
+             *
+             * Phrases generated through Markov-style State-Chain
+             * Attempt at using web workers again for creating new probability sets.
+             *
+             * Max Sentence Length = 28 Caps Letters, 1 exclamation mark (at the end) - 29 chars, approx.
+             *
+             */
+            var PRONOUNS = [ 'I',  'You', 'We', 'They' ];
+            var ADVERBS_PRE = [ 'gently', 'quietly', 'forcefully', 'carefully' ];
+            var VERBS = [ 'sleep', 'eat', 'walk', 'work' ];
+            var ADVERBS_POST = [ 'then', 'there', 'here' ];
+            
+            var CHECK_SPEED = 30;
+            var timerId = -1;
+            
+            var KEYS_ENTERED = 0;
+            var ERRORS = 0;
+            var COUNT_START_TIME;
+            var UPDATE_DATA_WHEN = 5;   //Every x seconds, Accuracy and WPM will be updated
+            
+            var PHRASE = '';
+            var KEY_INDEX = 0;
+            var VERIFIED_INPUT = '';
+            
+            $(function() {
+                $('#typeBox').keyup(gradeInput);
+            });
+            
+            function update()
+            {
+                if(Date.now() - COUNT_START_TIME > UPDATE_DATA_WHEN * 1000)
+                {
+                    COUNT_START_TIME = Date.now();
+                    
+                    $('#accuracySpan').html((KEYS_ENTERED > 0 ? parseInt((1 - ERRORS/KEYS_ENTERED) * 100).toString() + '%' : '-'));
+                    ERRORS = 0;
+                    
+                    $('#wpmSpan').html(parseInt((KEYS_ENTERED/UPDATE_DATA_WHEN) * 12).toString());
+                    KEYS_ENTERED = 0;
+                }
+                
+                $("#resultSpan").html(PHRASE.charAt(KEY_INDEX));
+            }
+            
+            function gradeInput(e)
+            {
+                var enteredText = $('#typeBox').val(); 
+                $('#resultSpan').removeClass('wrongText');
+                
+                KEYS_ENTERED++;
+                
+                if(PHRASE.charAt(KEY_INDEX) != enteredText.charAt(enteredText.length - 1))
+                {
+                    $("#resultSpan").addClass('wrongText');                        
+                    $('#typeBox').val(VERIFIED_INPUT);
+                    ERRORS++;
+                }
+                else
+                {
+                    VERIFIED_INPUT = enteredText;
+                    KEY_INDEX++;
+                }
+                
+                if(KEY_INDEX > (PHRASE.length - 1))
+                {
+                    $('#typeBox').val('');
+                    KEY_INDEX = 0;
+                    VERIFIED_INPUT = '';
+                    updatePhrase();
+                }
+            }
+            
+            function updatePhrase()
+            {
+                PHRASE = PRONOUNS[parseInt(Math.random() * PRONOUNS.length)] + " " +
+                         ADVERBS_PRE[parseInt(Math.random() * ADVERBS_PRE.length)] + " " +
+                         VERBS[parseInt(Math.random() * VERBS.length)] + " " +
+                         ADVERBS_POST[parseInt(Math.random() * ADVERBS_POST.length)] + ".";
+                         
+                $('#phraseSpan').html(PHRASE);
+            }
+            
+            function start()
+            {
+                if(timerId != -1) {
+                    clearInterval(timerId);
+                }
+                timerId = setInterval(update, CHECK_SPEED);
+                
+                updatePhrase();
+                $('#typeBox').focus();
+                $('#typeBox').val("");
+                COUNT_START_TIME = Date.now();
+            }
+        </script>
+    </head>
+    
+    <body>
+        <div id="phraseDiv">
+            <span id="infoSpan" class="outputSpan">
+                <p>Accuracy:</p><p><span id="accuracySpan"></span></p>
+                <p>WPM:</p><p><span id="wpmSpan"></span></p>
+                <p><input type="button" value="Start!" onclick="start()"/></p>
+            </span>
+            <span id="phraseSpan" class="outputSpan">Press the Start button to begin!</span>
+        </div>
+        
+        <div id="inputDiv">
+            <span id="resultSpan" class="inputSpan"></span>
+            <span id="typeSpan" class="inputSpan"><input id="typeBox" type="text"></span>
+        </div>
+    </body>
+</html>
