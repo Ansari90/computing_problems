@@ -1,0 +1,71 @@
+<html>
+<head>
+<title>CollatzConjecture</title>
+<script type="text/javascript">
+function start()
+{
+	var canvas = document.getElementById("graph");
+	var context = canvas.getContext("2d");
+	var whichColor = Math.floor(Math.random() * 4) + 1;
+	var colorString = "";
+	switch(whichColor)
+	{
+		case 1:
+			colorString = "Red";
+		break;
+		case 2:
+			colorString = "Blue";
+		break;
+		case 3:
+			colorString = "Green";
+		break;
+		default:
+			colorString = "Yellow";
+	};
+	context.fillStyle = colorString;
+	var counter = 1, stoppingTime = 0, flip = -1;
+
+	while(counter < 10000)
+	{
+		stoppingTime = collatzRecursion(counter, 0);
+		context.fillRect(stoppingTime * 6, counter/10, 3,3);
+	
+		if(counter == -1) //Valid condition will cause thread to hang (needs workers)
+		{
+			if(flip == -1) { context.fillStyle = "Blue"; }
+			else { context.fillStyle = "Red"; }
+
+			flip = flip * -1;
+			counter = 1; //Goes on forever!!
+		}
+		counter = counter + 1;	
+	}
+
+}
+
+function collatzRecursion(number, index)
+{
+	var toReturn = 0, modifiedNumber = 0;	
+
+	if(number == 1) 
+	{
+		if(index == 0) { index = 0; } //trivial case, n = 1 will give i = 0	
+		toReturn = index; 
+	}
+	else
+	{
+		if(number % 2 == 0) { modifiedNumber = number/2; }
+		else { modifiedNumber = (number * 3) + 1; }
+
+		index = index + 1;
+		toReturn = collatzRecursion(modifiedNumber, index);
+	}
+
+	return toReturn;	
+}
+</script>
+</head>
+<body onload="start()">
+<canvas id="graph" height=10000 width=10000/>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<html>
+<head>
+<title>DijkstraMap</title>
+<script type="text/javascript">
+//Ok, so there are a bunch of things in this code that could do with some tweaking (fine, a lot; there, happy??)
+
+function createMap(height, width)
+{
+	var length = height * width;
+	var map = new Array(length);
+	for(arrayInit = 0; arrayInit != length; arrayInit++) { map[arrayInit] = "empty"; }
+
+	var destinationIndex = Math.floor(Math.random() * length);
+	map[destinationIndex] = "destination";
+	var sourceIndex = -1;
+	do { sourceIndex = Math.floor(Math.random() * length); } while(sourceIndex == destinationIndex);
+	map[sourceIndex] = "source";
+	
+	for(counter = 0, blockChance = 0; counter < length; counter++)
+	{
+	
+		if(map[counter] != "source" && map[counter] != "destination")
+		{
+			blockChance = Math.floor(Math.random() * length);
+			if(blockChance < Math.floor(length/4))
+			{
+				map[counter] = "block";
+			}
+		}
+	
+	}
+
+	createPath(map, discoverPath(map));
+	return map;	
+}
+
+function VertexObject(x, y, type)
+{
+	this.x = x;
+	this.y = y;
+	this.type = type;
+	this.previous = -1;	//index of previous node (shortest distance from current) 
+	this.visited = false;
+	this.distance = -1;	// -1 = infinity distance
+}
+
+function discoverPath(map) //Top, Down, Left, Right - no diagonals!!
+{
+	var edgeLength = Math.sqrt(map.length);
+	var vertexList = new Array(map.length);
+	var sourceIndex, destinationIndex, current, neighbors, counter;
+	
+	for(counter = 0; counter < map.length; counter++)
+	{
+		vertexList[counter] = new VertexObject(counter % edgeLength, counter / edgeLength, map[counter]);
+		switch(map[counter])
+		{
+			case "source":
+				sourceIndex = counter;
+				vertexList[counter].distance = 0;
+			break;
+			case "destination":
+				destinationIndex = counter;
+			break;
+		}
+	}
+	
+	current = sourceIndex;
+	var tempVert, upperDist;
+	while(vertexList[destinationIndex].visited != true)
+	{
+		neighbors = getNeighborList(current, edgeLength);
+		setDistances(current, neighbors, vertexList);
+		
+		for(counter = 0, upperDist = -1; counter < vertexList.length; counter++)
+		{
+			tempVert = vertexList[counter];
+			if(tempVert.distance != -1 && tempVert.type != "block" && tempVert.visited != true) 
+			{
+				if(upperDist == -1 || tempVert.distance < upperDist)
+				{ 
+					upperDist  = tempVert.distance;
+					current = counter;
+				}				
+			}
+		}
+	}
+	
+	return vertexList;
+}
+
+function setDistances(index, neighborList, map)
+{
+	var currentVertex;
+	for(counter = 0; counter < neighborList.length; counter++)
+	{
+		currentVertex = map[neighborList[counter]];
+		if(currentVertex.type != "block" && currentVertex.visited == false)
+		{
+			//You would insert distance calculation code for distance between 2 vertices here
+			if((currentVertex.distance == -1) || currentVertex.distance > (map[index].distance + 1))
+			{
+				currentVertex.distance = map[index].distance + 1;	//All vertices have the same distance between them: 1
+				currentVertex.previous = index;
+			}
+		}
+	}
+	
+	map[index].visited = true;
+}
+
+function getNeighborList(index, edgeLength)
+{
+	var neighborList = new Array(1);
+	neighborList[0] = -1; //dummy value, will be removed at the end
+	
+	if((index + edgeLength) < Math.pow(edgeLength, 2)) { neighborList.push(index + edgeLength); }	//Down
+	if((index - edgeLength) > -1) { neighborList.push(index - edgeLength); }						//Up
+	if((index + 1)%edgeLength != 0) { neighborList.push(index + 1); }								//Right
+	if((index%edgeLength) != 0) { neighborList.push(index - 1); }									//Left
+	
+	//reverse, get rid of 1st element
+	neighborList.reverse();
+	neighborList.pop();
+	
+	return neighborList;
+}
+
+function createPath(map, vertexList)
+{
+	var destinationIndex, counter;
+	for(counter = 0; counter < map.length; counter++)
+	{
+		if(vertexList[counter].type == "destination") { destinationIndex = counter; }
+	}
+	
+	for(counter = vertexList[destinationIndex].previous; vertexList[counter].type != "source"; counter = vertexList[counter].previous)
+	{
+		map[counter] = "path";		
+	}
+}
+
+function populateCanvas()
+{
+	var blockEdge = 10, mapEdge = 100;
+	var map = createMap(mapEdge, mapEdge);
+	var canvas = document.getElementById("map");
+	var context = canvas.getContext("2d");
+
+	for(counter = 0; counter < map.length; counter++)	//Canvas better be a square!!
+	{
+		switch(map[counter])
+		{
+			case "destination":
+			context.fillStyle = "Orange";
+			break;
+
+			case "source":
+			context.fillStyle = "Red";
+			break;
+
+			case "block":
+			context.fillStyle = "Gray";
+			break;
+
+			case "empty":
+			context.fillStyle = "White";
+			break;
+			
+			case "read":
+			context.fillStyle = "Purple";
+			break;
+
+			case "path":
+			context.fillStyle = "Green";
+			break;
+		};
+		context.fillRect((counter%mapEdge) * blockEdge, (counter/mapEdge) * blockEdge, blockEdge, blockEdge);
+	}
+}
+</script>
+</head>
+<body onload="populateCanvas()">
+<canvas id="map" height=1000 width=1000/>
+</body>
+</html>
