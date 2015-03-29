@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+	    <title>Let's make Fractals!</title>
+	    
+	    <style>
+	    	.stretchedAndCentered {
+	    		width:100%;
+	    		text-align:center;
+	    	}
+	    	
+	    	.centeredTable {
+	    		margin-left:auto;
+	    		margin-right:auto;
+	    	}
+	    </style>
+	    
+	    <script type="text/javascript" src="./jquery_1_11_2.js"></script>
+	    <script>	    
+	        var ParamList = function(canvasEdge, cutOff, maxIterations, xScale, xShift, yScale, yShift)
+	        {
+	            this.CANVAS_EDGE = canvasEdge;
+	            this.CUTOFF = cutOff;
+	            
+	            this.MAX_ITERATIONS = maxIterations;
+	            
+	            this.X_SCALE = xScale;
+	            this.X_SHIFT = xShift;
+	            
+	            this.Y_SCALE = yScale;
+	            this.Y_SHIFT = yShift;
+	        }
+	        
+	        var Coordinates = function(xCoord, yCoord) {
+	            this.xCoord = xCoord;
+	            this.yCoord = yCoord;
+	        }
+	        
+	        var CTX;
+	        
+	        var EDGE_LENGTH = 1;
+	        var CANVAS_EDGE = 250;
+	        var CUTOFF = CANVAS_EDGE/2;
+	        
+	        var MAX_ITERATIONS = 1500;	        
+	        var FRACTAL_WORKER;
+	        
+	        //x scales to (-2.5,1), y to (-1, 1)
+	        var X_SCALE = 100;	
+	        var X_SHIFT = 0;		//further increasing values leads to image shifting right
+	        
+	        var Y_SCALE = 100;
+	        var Y_SHIFT = 0;	//further decreasing values leads to image shifting upwards
+	        
+	        var SCALE_BUMP = 100;
+	        var SHIFT_BUMP = 100;
+	        
+	        function init() {
+	        	document.getElementById('backgroundCanvas').setAttribute('width', CANVAS_EDGE);
+	        	document.getElementById('backgroundCanvas').setAttribute('height', CANVAS_EDGE);
+	            CTX = document.getElementById('backgroundCanvas').getContext('2d');
+	            
+	            FRACTAL_WORKER = new Worker('fractalWorker.js');
+	            FRACTAL_WORKER.onmessage = fractalWorkerMessageHandler;
+	            FRACTAL_WORKER.postMessage(new ParamList(CANVAS_EDGE, CUTOFF, MAX_ITERATIONS, X_SCALE, X_SHIFT, Y_SCALE, Y_SHIFT));
+	        }
+	        
+	        function fractalWorkerMessageHandler(e) {
+	        	var colorList = e.data;
+	        	
+	        	for(var x = 0; x < CANVAS_EDGE; x++) {
+	        		for(var y = 0; y < CANVAS_EDGE; y++) {
+	        			colorPixel(x, y, e.data[x][y]);
+	        		}
+	        	}
+	    	}
+	        
+	        function colorPixel(posX, posY, color) {
+	            CTX.fillStyle = color
+	
+	            CTX.beginPath();
+	            CTX.rect(posX, posY, EDGE_LENGTH, EDGE_LENGTH);
+	            CTX.closePath();
+	
+	            CTX.stroke();
+	            CTX.fill();
+	        }
+	        
+	        
+	        function moveSelectionSquare(keyNum) {
+	        	switch(keyNum) {
+	        	case 1:
+	        		Y_SHIFT -= SHIFT_BUMP;
+	        		break;
+	        	case 2:
+	        		X_SHIFT -= SHIFT_BUMP;
+	        		break;
+	        	case 3:
+	        		X_SHIFT += SHIFT_BUMP;
+	        		break;
+	        	case 4:
+	        		Y_SHIFT += SHIFT_BUMP
+	        		break;
+	        	case 5:
+	        		X_SCALE += SCALE_BUMP;
+	        		Y_SCALE += SCALE_BUMP;
+	        		break;
+	        	case 6:
+	        		X_SCALE -= SCALE_BUMP;
+	        		Y_SCALE -= SCALE_BUMP;
+	        		break;
+	        	}
+	        	
+	        	FRACTAL_WORKER.postMessage(new ParamList(CANVAS_EDGE, CUTOFF, MAX_ITERATIONS, X_SCALE, X_SHIFT, Y_SCALE, Y_SHIFT));
+	        }
+	    </script>
+	</head>
+	
+	<body onload="init()">	
+		<div class="stretchedAndCentered">
+			<h3>Mandelbrot Set Viewer</h3>
+	        <canvas id="backgroundCanvas" class="outputCanvas" width="1" height="1"></canvas>
+	    </div>
+	    
+		<div id="controlPanelDiv" class="stretchedAndCentered">
+			<p>Camera Controls</p>
+	    	<table class="centeredTable">
+		    	<tr>
+		    		<td></td>
+		    		<td><input type="button" value="UP" onclick="moveSelectionSquare(1)" class="stretchedAndCentered"/></td>
+		    		<td></td>
+		    	</tr>
+		    	<tr>
+		    		<td><input type="button" value="LEFT" onclick="moveSelectionSquare(2)" class="stretchedAndCentered"/></td>
+		    		<td></td>
+		    		<td><input type="button" value="RIGHT" onclick="moveSelectionSquare(3)" class="stretchedAndCentered"/></td>
+		    	</tr>
+		    	<tr>
+		    		<td></td>
+		    		<td><input type="button" value="DOWN" onclick="moveSelectionSquare(4)" class="stretchedAndCentered"/></td>
+		    		<td></td>
+		    	</tr>
+		    	<tr>
+		    		<td><input type="button" value="Zoom In" onclick="moveSelectionSquare(5)" class="stretchedAndCentered"/></td>
+		    		<td></td>
+		    		<td><input type="button" value="Zoom Out" onclick="moveSelectionSquare(6)" class="stretchedAndCentered"/></td>
+		    	</tr>
+		    	<tr>
+		    		<td></td>
+		    		<td><input type="button" value="Reset" onclick="location.reload()" class="stretchedAndCentered"/></td>
+		    		<td></td>
+		    	</tr>
+		    </table>
+		    <p>Right click and select "Save Image As..." to save the image onto your computer!</p>
+	  	</div>	  	
+	</body>
+</html>
