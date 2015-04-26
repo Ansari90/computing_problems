@@ -10,16 +10,23 @@
 	    		text-align:center;
 	    	}
 	    	
-	    	.centeredTable {
+	    	table {
 	    		margin-left:auto;
 	    		margin-right:auto;
 	    	}
+            
+            input {
+                width: 45px;
+            }
+            
+            .bigTd {
+                padding: 25px;
+            }
 	    </style>
 	    
 	    <script type="text/javascript" src="./jquery_1_11_2.js"></script>
 	    <script>	    
-	        var ParamList = function(canvasEdge, cutOff, maxIterations, xScale, xShift, yScale, yShift)
-	        {
+	        var ParamList = function(canvasEdge, cutOff, maxIterations, xScale, xShift, yScale, yShift) {
 	            this.CANVAS_EDGE = canvasEdge;
 	            this.CUTOFF = cutOff;
 	            
@@ -40,8 +47,9 @@
 	        var CTX;
 	        
 	        var EDGE_LENGTH = 1;
-	        var CANVAS_EDGE = 250;
+	        var CANVAS_EDGE = 500;
 	        var CUTOFF = CANVAS_EDGE/2;
+            var DEFAULT_EDGE = 250;
 	        
 	        var MAX_ITERATIONS = 1500;	        
 	        var FRACTAL_WORKER;
@@ -56,26 +64,70 @@
 	        var SCALE_BUMP = 100;
 	        var SHIFT_BUMP = 100;
 	        
+            var COLOR_LIST;
+            
 	        function init() {
 	        	document.getElementById('backgroundCanvas').setAttribute('width', CANVAS_EDGE);
 	        	document.getElementById('backgroundCanvas').setAttribute('height', CANVAS_EDGE);
 	            CTX = document.getElementById('backgroundCanvas').getContext('2d');
 	            
+                document.getElementById('startX').setAttribute('max', CANVAS_EDGE - 1);
+                document.getElementById('startX').setAttribute('value', CANVAS_EDGE/2);
+                
+                document.getElementById('width').setAttribute('max', CANVAS_EDGE);
+                document.getElementById('width').setAttribute('value', DEFAULT_EDGE);
+                
+                document.getElementById('startY').setAttribute('max', CANVAS_EDGE - 1);
+                document.getElementById('startY').setAttribute('value', CANVAS_EDGE/2);
+                
+                document.getElementById('height').setAttribute('max', CANVAS_EDGE);
+                document.getElementById('height').setAttribute('value', DEFAULT_EDGE);
+                
 	            FRACTAL_WORKER = new Worker('fractalWorker.js');
 	            FRACTAL_WORKER.onmessage = fractalWorkerMessageHandler;
 	            FRACTAL_WORKER.postMessage(new ParamList(CANVAS_EDGE, CUTOFF, MAX_ITERATIONS, X_SCALE, X_SHIFT, Y_SCALE, Y_SHIFT));
+                
+                $('#renderInfo').text('Image Edge: ' + CANVAS_EDGE);
 	        }
 	        
 	        function fractalWorkerMessageHandler(e) {
-	        	var colorList = e.data;
-	        	
-	        	for(var x = 0; x < CANVAS_EDGE; x++) {
-	        		for(var y = 0; y < CANVAS_EDGE; y++) {
-	        			colorPixel(x, y, e.data[x][y]);
-	        		}
-	        	}
+                COLOR_LIST = e.data;                
+                renderFull();
 	    	}
+            
+            function renderSub() {       
+                var okToRender = true;
+                var paramArray = new Array();
+                
+                paramArray.push([Number($('#startX').val()), Number($('#width').val())]);
+                paramArray.push([Number($('#startY').val()), Number($('#height').val())]);
+                
+                
+                paramArray.forEach(function(pointAndLength) {
+                    if((pointAndLength[0] < 0 || pointAndLength[0] > CANVAS_EDGE - 1)
+                       || (pointAndLength[0] + pointAndLength[1] > CANVAS_EDGE)) { okToRender = false; }
+                });
+                
+                
+                if(okToRender) {
+                    render(paramArray[0][0], paramArray[1][0], paramArray[0][1], paramArray[1][1]);
+                }
+            }
+            
+            function renderFull() {
+                render(0, 0, CANVAS_EDGE, CANVAS_EDGE);
+            }
 	        
+            function render(startX, startY, width, height) {                
+                clearCanvas();
+                
+                for(var x = startX; x < startX + width; x++) {
+                    for(var y = startY; y < startY + height ; y++) {
+                        colorPixel(x, y, COLOR_LIST[x][y]);
+                    }
+                }
+            }
+            
 	        function colorPixel(posX, posY, color) {
 	            CTX.fillStyle = color
 	
@@ -86,9 +138,12 @@
 	            CTX.stroke();
 	            CTX.fill();
 	        }
+            
+            function clearCanvas() {
+                CTX.clearRect(0, 0, CANVAS_EDGE, CANVAS_EDGE);
+            }
 	        
-	        
-	        function moveSelectionSquare(keyNum) {
+	        function moveSelectionSquare(keyNum) {                
 	        	switch(keyNum) {
 	        	case 1:
 	        		Y_SHIFT -= SHIFT_BUMP;
@@ -112,6 +167,7 @@
 	        		break;
 	        	}
 	        	
+                clearCanvas();
 	        	FRACTAL_WORKER.postMessage(new ParamList(CANVAS_EDGE, CUTOFF, MAX_ITERATIONS, X_SCALE, X_SHIFT, Y_SCALE, Y_SHIFT));
 	        }
 	    </script>
@@ -120,38 +176,73 @@
 	<body onload="init()">	
 		<div class="stretchedAndCentered">
 			<h3>Mandelbrot Set Viewer</h3>
-	        <canvas id="backgroundCanvas" class="outputCanvas" width="1" height="1"></canvas>
 	    </div>
 	    
 		<div id="controlPanelDiv" class="stretchedAndCentered">
-			<p>Camera Controls</p>
-	    	<table class="centeredTable">
-		    	<tr>
-		    		<td></td>
-		    		<td><input type="button" value="UP" onclick="moveSelectionSquare(1)" class="stretchedAndCentered"/></td>
-		    		<td></td>
-		    	</tr>
-		    	<tr>
-		    		<td><input type="button" value="LEFT" onclick="moveSelectionSquare(2)" class="stretchedAndCentered"/></td>
-		    		<td></td>
-		    		<td><input type="button" value="RIGHT" onclick="moveSelectionSquare(3)" class="stretchedAndCentered"/></td>
-		    	</tr>
-		    	<tr>
-		    		<td></td>
-		    		<td><input type="button" value="DOWN" onclick="moveSelectionSquare(4)" class="stretchedAndCentered"/></td>
-		    		<td></td>
-		    	</tr>
-		    	<tr>
-		    		<td><input type="button" value="Zoom In" onclick="moveSelectionSquare(5)" class="stretchedAndCentered"/></td>
-		    		<td></td>
-		    		<td><input type="button" value="Zoom Out" onclick="moveSelectionSquare(6)" class="stretchedAndCentered"/></td>
-		    	</tr>
-		    	<tr>
-		    		<td></td>
-		    		<td><input type="button" value="Reset" onclick="location.reload()" class="stretchedAndCentered"/></td>
-		    		<td></td>
-		    	</tr>
-		    </table>
+            <table>
+                <tr>
+                    <td class="bigTd">
+                        <p>Camera Controls</p>
+                        <table>
+                            <tr>
+                                <td></td>
+                                <td><input type="button" value="UP" onclick="moveSelectionSquare(1)" class="stretchedAndCentered"/></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td><input type="button" value="LEFT" onclick="moveSelectionSquare(2)" class="stretchedAndCentered"/></td>
+                                <td></td>
+                                <td><input type="button" value="RIGHT" onclick="moveSelectionSquare(3)" class="stretchedAndCentered"/></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td><input type="button" value="DOWN" onclick="moveSelectionSquare(4)" class="stretchedAndCentered"/></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td><input type="button" value="Zoom In" onclick="moveSelectionSquare(5)" class="stretchedAndCentered"/></td>
+                                <td></td>
+                                <td><input type="button" value="Zoom Out" onclick="moveSelectionSquare(6)" class="stretchedAndCentered"/></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td><input type="button" value="Reset" onclick="location.reload()" class="stretchedAndCentered"/></td>
+                                <td></td>
+                            </tr>                
+                        </table>
+                    </td>
+                    
+                    <td class="bigTd">
+                        <canvas id="backgroundCanvas" class="outputCanvas" width="1" height="1"></canvas>
+                    </td>
+                    
+                    <td class="bigTd">
+                        <p>Render Controls</p>
+                        <p id="renderInfo"></p>
+                        <table>
+                            <tr>
+                                <td>Start X</td>
+                                <td><input id="startX" type="number" min="0" value="0"/></td>
+                                <td>Width:</td>
+                                <td><input id="width" type="number" min="0" value="0"/></td>
+                            </tr>
+                            <tr>
+                                <td>Start Y:</td>
+                                <td><input id="startY" type="number" min="0" value="0"/></td>
+                                <td>Height:</td>
+                                <td><input id="height" type="number" min="0" value="0"/></td>
+                            </tr>
+                        </table>
+                        <table>
+                            <tr>
+                                <td></td>
+                                <td><input type="button" value="Sub Image" onclick="renderSub()" class="stretchedAndCentered"/></td>
+                                <td></td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
 		    <p>Right click and select "Save Image As..." to save the image onto your computer!</p>
 	  	</div>	  	
 	</body>

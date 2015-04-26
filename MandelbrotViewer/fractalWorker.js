@@ -7,7 +7,9 @@ var COLOR_INCREMENT;
 
 onmessage = function(e) {
     paramList = e.data;
+    
     COLOR_INCREMENT = Math.round(paramList.MAX_ITERATIONS/RGB_MAX);
+    //COLOR_INCREMENT = Math.round((3 * RGB_MAX)/paramList.MAX_ITERATIONS);
     
     generateCompleteMap();
 }
@@ -17,7 +19,7 @@ function generateCompleteMap() {
 	
 	for(var x = 0; x < paramList.CANVAS_EDGE; x++) {
 		coordArray[x] = new Array(paramList.CANVAS_EDGE);
-		
+        
 		for(var y = 0; y < paramList.CANVAS_EDGE; y++) {
 			coordArray[x][y] = getColor(iterationsToInfinity(x, y));
 		}
@@ -63,7 +65,8 @@ function scaleCoords(coord, axis) {
 }
 
 function getColor(iterations) {
-    var rgbNumArray = [0,0,0];
+    var rgbNumArray = [0, 0, 0];
+    var index = 0;
     
     if(iterations != paramList.MAX_ITERATIONS) {
         for(var counter = 0; iterations > 0; iterations--) {
@@ -80,6 +83,28 @@ function getColor(iterations) {
         }
 
     }
+    
+    /*
+    if(iterations < paramList.MAX_ITERATIONS) {
+        if(iterations > paramList.MAX_ITERATIONS - (paramList.MAX_ITERATIONS/3)) {
+            index = 0;
+        }
+        else {
+            if(iterations > paramList.MAX_ITERATIONS -  (2 * (paramList.MAX_ITERATIONS/3))) {
+                index = 1;
+            }
+            else {
+                index = 2;
+            }
+        }
+
+        while(iterations > 0) {
+            rgbNumArray[index] += COLOR_INCREMENT;
+
+            iterations--;
+        } 
+    }
+    */
 
     return "rgb(" + rgbNumArray[0] + "," + rgbNumArray[1] + "," + rgbNumArray[2] + ")";
 }
