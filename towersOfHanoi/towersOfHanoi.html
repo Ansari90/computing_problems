@@ -1,0 +1,107 @@
+<html>
+    <head>
+        <title>Towers Of Hanoi</title>
+        <script type="text/javascript">
+            var CANVAS_EDGE = 900;
+            var DISK_GAP = 5;
+
+            var POLE_WIDTH = Math.floor((CANVAS_EDGE/3)/9);
+            var POLE_VISUAL_HEIGHT = CANVAS_EDGE - DISK_GAP;
+            var POLE_HEIGHT = Math.floor(CANVAS_EDGE * 0.90);
+            var POLE_COLOR = "#000000";
+
+            var DISK_HEIGHT = 1;
+            var NUM_OF_DISKS = 1;
+            var DISK_MAX_WIDTH = Math.floor(CANVAS_EDGE/3) - (2 * DISK_GAP);
+            var DISK_MIN_WIDTH = POLE_WIDTH + (2 * DISK_GAP);
+            var DISK_WIDTH_JUMP = 1;
+            var DISK_COLORS = [ '#FF0000', '#00FF00', '#0000FF' ];
+            var DISK_LIST = {};
+
+            var POLE_X = [];
+            POLE_X.push(POLE_WIDTH * 4);
+            POLE_X.push(POLE_WIDTH * 13);
+            POLE_X.push(POLE_WIDTH * 22);
+
+            var worker = null;
+            var ctx = null;
+
+            function generatePoles() {
+                ctx.fillStyle = POLE_COLOR;
+
+                ctx.fillRect(POLE_X[0], DISK_GAP,POLE_WIDTH, POLE_VISUAL_HEIGHT);
+                ctx.fillRect(POLE_X[1], DISK_GAP,POLE_WIDTH, POLE_VISUAL_HEIGHT);
+                ctx.fillRect(POLE_X[2], DISK_GAP,POLE_WIDTH, POLE_VISUAL_HEIGHT);
+            }
+
+            function drawDiscs(towerLists) {
+                var towerNum = 0;
+
+                towerLists.forEach(function(tower, index, tLists) {
+                    var poleX = POLE_X[towerNum++];
+                    var diskPos = tower.length - 1;
+
+                    tower.forEach(function(diskNum, index, list) {
+                        var disk = DISK_LIST[diskNum];
+
+                        var diskX = poleX - Math.floor((disk.width - POLE_WIDTH)/2);
+                        var diskY = (CANVAS_EDGE - DISK_HEIGHT) - (diskPos * (DISK_HEIGHT + DISK_GAP));
+                        diskPos--;
+
+                        ctx.fillStyle = disk.color;
+                        ctx.fillRect(diskX, diskY, disk.width, DISK_HEIGHT);
+                    });
+                });
+            }
+
+            function getRandomInt(min, max) {
+              return Math.floor(Math.random() * (max - min)) + min;
+            }
+
+            function moveTower()
+            {
+                NUM_OF_DISKS = document.getElementById("numOfDisks").value;
+                DISK_HEIGHT = Math.floor((POLE_HEIGHT - (NUM_OF_DISKS * DISK_GAP))/NUM_OF_DISKS);
+                DISK_WIDTH_JUMP = Math.floor((DISK_MAX_WIDTH - DISK_MIN_WIDTH)/NUM_OF_DISKS);
+
+                for(var i = 0; i < NUM_OF_DISKS; i++) {
+                    DISK_LIST[i] = {
+                        'width' : DISK_MIN_WIDTH + (i * DISK_WIDTH_JUMP),
+                        'color' : DISK_COLORS[getRandomInt(0, DISK_COLORS.length)]
+                    }
+                }
+
+                if(worker !== null) {
+                    worker.terminate();
+                }
+
+                if(ctx !== null) {
+                    ctx.clearRect(0,0,CANVAS_EDGE,CANVAS_EDGE);
+                }
+
+                var canvas = document.getElementById('towerCanvas');
+                canvas.style.border = "black 2px solid";
+                canvas.setAttribute("width", CANVAS_EDGE);
+                canvas.setAttribute("height", CANVAS_EDGE);
+                ctx = document.getElementById('towerCanvas').getContext('2d');
+
+                generatePoles();
+
+                worker = new Worker('towersOfHanoiWorker.js');
+                worker.addEventListener('message', function(e) {
+                    console.log('inside Main Thread!');
+                    ctx.clearRect(0,0,CANVAS_EDGE,CANVAS_EDGE);
+                    generatePoles();
+                    drawDiscs(e.data);
+                }, false);
+
+                worker.postMessage(NUM_OF_DISKS);
+            }
+        </script>
+    </head>
+    <body>
+        <input id="numOfDisks" type="number" min="1" value=10></input>
+        <button onclick="moveTower();">Click Me!</button>
+        <canvas id="towerCanvas" height="1" width="1"></canvas>
+    </body>
+</html>

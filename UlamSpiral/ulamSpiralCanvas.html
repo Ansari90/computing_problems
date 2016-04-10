@@ -1,0 +1,46 @@
+<html>
+    <head>
+        <title>Ulam's JS Spiral</title>
+        <script type="text/javascript">
+            var CANVAS_EDGE = 1000;
+            var SQUARE_LENGTH = 1;
+            
+            var worker = null;
+            var ctx = null;
+                        
+            function createSpiral()
+            {
+                if(ctx !== null) {
+                    ctx.clearRect(0,0,CANVAS_EDGE,CANVAS_EDGE);
+                }
+                
+                CANVAS_EDGE = document.getElementById("canvasEdgeInput").value;
+                
+                if(worker !== null) { 
+                    worker.terminate();
+                }
+                
+                worker = new Worker('primeWorker.js');
+                worker.addEventListener('message', function(e) {
+                    var squareToColor = e.data;
+                    ctx.fill = 'black';
+                    ctx.fillRect(squareToColor.x, squareToColor.y, SQUARE_LENGTH, SQUARE_LENGTH);
+                }, false);       
+                
+                var canvas = document.getElementById('ulamCanvas');
+                canvas.setAttribute('height', CANVAS_EDGE);
+                canvas.setAttribute('width', CANVAS_EDGE);
+                
+                ctx = document.getElementById('ulamCanvas').getContext('2d');
+                
+                worker.postMessage(CANVAS_EDGE);
+            }
+            
+        </script>
+    </head>
+    <body onload="initialize();">
+        <input id="canvasEdgeInput" type="number" min="10" max="1000"></input>
+        <button onclick="createSpiral();">Click Me!</button>
+        <canvas id="ulamCanvas" height="1" width="1"></canvas>
+    </body>
+</html>

@@ -1,0 +1,72 @@
+<html>
+    <head>
+        <title>NQueens JS Canvas</title>
+        <script type="text/javascript">
+            var CANVAS_EDGE = 1000;
+            var ALTERNATE_COLOR = '#996633';
+            
+            var worker = null;
+            var ctx = null;
+            
+            function createArrangement()
+            {
+                var SQUARE_EDGES = [];                
+                var NUM_OF_QUEENS = document.getElementById("numOfQueensInput").value;
+                
+                if(worker !== null) { 
+                    worker.terminate();
+                }
+                if(ctx !== null) {
+                    ctx.clearRect(0,0,CANVAS_EDGE,CANVAS_EDGE);
+                }                
+                
+                var canvas = document.getElementById('nQueensCanvas');                
+                ctx = document.getElementById('nQueensCanvas').getContext('2d');
+                canvas.style.border = "black 2px solid";
+                var fill = ALTERNATE_COLOR;             
+                
+                var SQUARE_EDGE = CANVAS_EDGE / NUM_OF_QUEENS;
+                for(var y = 0; y < NUM_OF_QUEENS; y++) {
+                    if(y % 2 === 0) { fill = '#ffffff'}
+                    else { fill = ALTERNATE_COLOR; }
+                    ctx.fillStyle = fill;
+                    
+                    for(var x = 0; x < NUM_OF_QUEENS; x++) {
+                        SQUARE_EDGES.push({
+                            'x' : x,
+                            'y' : y
+                        });
+                        
+                        if(ctx.fillStyle === ALTERNATE_COLOR) {
+                            ctx.fillRect(x * SQUARE_EDGE, y * SQUARE_EDGE, SQUARE_EDGE, SQUARE_EDGE);
+                        }
+                        
+                        if(fill === ALTERNATE_COLOR) { fill = '#ffffff'}
+                        else { fill = ALTERNATE_COLOR; }
+                        ctx.fillStyle = fill;
+                    }
+                }
+                
+                worker = new Worker('nQueensWorker.js');
+                
+                worker.addEventListener('message', function(e) {
+                    var queenSquares = e.data;
+                    var image = document.getElementById('queen');
+                    
+                    for(i = 0; i < queenSquares.length; i++) {
+                        ctx.drawImage(image, queenSquares[i].x * SQUARE_EDGE, queenSquares[i].y * SQUARE_EDGE, SQUARE_EDGE, SQUARE_EDGE);
+                    }
+                    
+                }, false);
+                
+                worker.postMessage(NUM_OF_QUEENS);
+            }
+        </script>
+    </head>
+    <body>
+        <input id="numOfQueensInput" type="number" min="4" max="100" value=10></input>
+        <button onclick="createArrangement();">Click Me!</button>
+        <canvas id="nQueensCanvas" height="1000" width="1000"></canvas>
+        <img id="queen" src="queen.png" hidden/>
+    </body>
+</html>

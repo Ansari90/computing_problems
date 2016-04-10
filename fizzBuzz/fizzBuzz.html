@@ -1,0 +1,43 @@
+<html>
+    <head>
+        <title>Fizz Buzz!</title>
+        <script type="text/javascript">
+            function generateFizzBuzz() {
+                var fbMax = document.getElementById("fbMax").value;
+                var patternPara = document.getElementById("patternPara");
+                
+                for(var i = 1; i <= fbMax; i++) {
+                    var isFizzBuzz = false;
+                    var stringToWrite = " ";
+                    
+                    if(i % 3 == 0) {
+                        stringToWrite += "Fizz"
+                        isFizzBuzz = true;
+                    }
+                    
+                    if(i % 5 == 0) {
+                        if(isFizzBuzz) {
+                            stringToWrite += " ";
+                        }
+                        
+                        stringToWrite += "Buzz";
+                        isFizzBuzz = true;
+                    }
+                    
+                    if(!isFizzBuzz) {
+                        stringToWrite += i;
+                    }
+                    
+                    stringToWrite += ",";
+                    
+                    patternPara.innerHTML += stringToWrite;
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <input id="fbMax" type="number" min="1" value=35></input>
+        <button onclick="generateFizzBuzz();">Click Me!</button>
+        <p id="patternPara"></p>
+    </body>
+</html>
